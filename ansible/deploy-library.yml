@@ -1,0 +1,41 @@
+
+---
+- name: Deploy Smart Library web application
+  hosts: web
+  become: true
+
+  tasks:
+    - name: Install Docker
+      ansible.builtin.apt:
+        name: docker.io
+        state: present
+        update_cache: true
+
+    - name: Ensure Docker is running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create application directory
+      ansible.builtin.file:
+        path: /opt/smart-library
+        state: directory
+        mode: "0755"
+
+    - name: Copy Smart Library HTML page
+      ansible.builtin.copy:
+        src: ../app/index.html
+        dest: /opt/smart-library/index.html
+        mode: "0644"
+
+    - name: Run Smart Library container
+      community.docker.docker_container:
+        name: smart-library-web
+        image: nginx:alpine
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "8080:80"
+        volumes:
+          - /opt/smart-library/index.html:/usr/share/nginx/html/index.html:ro
